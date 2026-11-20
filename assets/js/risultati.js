@@ -1,30 +1,38 @@
 import { Squadra } from "./classi.js";
+import { cercaPartite, renderDettagli, svuotaDettagli } from "./dettagli.js";
+import {
+  aggiungiPreferito,
+  renderPreferiti,
+  isPreferito,
+} from "./preferiti.js";
 
-const DB_URL = "https://www.thesportsdb.com/api/v1/json/123/searchteams.php";
+const TEAM_URL = "https://www.thesportsdb.com/api/v1/json/123/searchteams.php";
 
 const form = document.querySelector("#search-form");
 const search = document.querySelector("#search");
 const spinner = document.querySelector("#spinner");
 const errore = document.querySelector("#alert");
-const risultati = document.querySelector("#risultati-section .card-grid");
+export const risultati = document.querySelector(
+  "#risultati-section .card-grid",
+);
 let controller;
 let timeoutId;
 
-function mostraSpinner() {
+export function mostraSpinner() {
   spinner.hidden = false;
   errore.hidden = true;
 }
 
-function nascondiSpinner() {
+export function nascondiSpinner() {
   spinner.hidden = true;
 }
 
-function mostraErrore(msg) {
+export function mostraErrore(msg) {
   errore.textContent = "Errore: " + msg;
   errore.hidden = false;
 }
 
-async function getJSON(url, opzioni) {
+export async function getJSON(url, opzioni) {
   const response = await fetch(url, opzioni);
 
   if (!response.ok) {
@@ -37,13 +45,21 @@ async function getJSON(url, opzioni) {
 async function cercaSquadra(query) {
   if (controller) {
     controller.abort();
+    controller = null;
   }
+
   controller = new AbortController();
   const { signal } = controller;
 
+  errore.hidden = true;
+  svuotaDettagli();
+  document.querySelectorAll(".card.selected").forEach((selected) => {
+    selected.classList.remove("selected");
+  });
+
   mostraSpinner();
 
-  const url = new URL(DB_URL);
+  const url = new URL(TEAM_URL);
   url.searchParams.set("t", query);
 
   try {
@@ -65,30 +81,36 @@ async function cercaSquadra(query) {
   }
 }
 
-function renderSquadra(teams) {
+function renderSquadra(squadra) {
   errore.hidden = true;
   risultati.textContent = "";
+  svuotaDettagli();
+  document.querySelectorAll(".card.selected").forEach((selected) => {
+    selected.classList.remove("selected");
+  });
 
-  if (!teams) {
+  if (!squadra || squadra.length === 0) {
     const nonTrovata = document.createElement("p");
-    nonTrovata.className = "text-center fs-5 text-white my-3 p-0 mx-0";
-    if (teams === null) {
+    nonTrovata.className =
+      "text-center fs-6 fst-italic text-white my-3 p-0 mx-0";
+    if (squadra === null) {
       nonTrovata.textContent = "Nessuna squadra trovata";
     } else {
-      nonTrovata.textContent = "Inizia a cercare la tua squadra";
+      nonTrovata.textContent = "Cerca la tua squadra";
     }
     risultati.appendChild(nonTrovata);
     return;
   }
 
-  teams.forEach((squadraTrovata) => {
+  squadra.forEach((squadraTrovata) => {
     const squadra = new Squadra(squadraTrovata);
 
     const article = document.createElement("article");
     article.className = "card-container w-100";
+    article.dataset.teamId = squadra.id;
 
     const card = document.createElement("div");
-    card.className = "card h-100 border-0 rounded-3 w-100";
+    card.className = "card h-100 rounded-3 w-100";
 
     const cardBody = document.createElement("div");
     cardBody.className = "card-body text-center p-4 w-100";
@@ -111,9 +133,50 @@ function renderSquadra(teams) {
     paese.textContent = squadra.paese;
 
     const btnPreferiti = document.createElement("button");
-    btnPreferiti.className = "btn border-2 mt-3 w-100 fw-bold";
     btnPreferiti.type = "button";
-    btnPreferiti.textContent = "⭐ Aggiungi ai preferiti";
+    btnPreferiti.dataset.teamId = squadra.id;
+
+    if (isPreferito(squadra.id)) {
+      btnPreferiti.textContent = "✓ Già nei preferiti";
+      btnPreferiti.className = "btn border-2 mt-3 w-100 fw-bold preferito";
+      btnPreferiti.disabled = true;
+    } else {
+      btnPreferiti.textContent = "⭐ Aggiungi ai preferiti";
+      btnPreferiti.className = "btn border-2 mt-3 w-100 fw-bold";
+    }
+
+    btnPreferiti.addEventListener("click", () => {
+      aggiungiPreferito(squadra);
+      btnPreferiti.textContent = "✓ Già nei preferiti";
+      btnPreferiti.className = "btn border-2 mt-3 w-100 fw-bold preferito";
+      btnPreferiti.disabled = true;
+      renderPreferiti();
+    });
+
+    card.addEventListener("click", async (e) => {
+      if (e.target.closest("button")) {
+        return;
+      }
+
+      const selezionato = card.classList.contains("selected");
+      const allCard = document.querySelectorAll(".card.selected");
+
+      allCard.forEach((selected) => {
+        selected.classList.remove("selected");
+      });
+
+      if (selezionato) {
+        cercaPartite(null);
+        svuotaDettagli();
+      } else {
+        card.classList.add("selected");
+        const partite = await cercaPartite(squadra.id);
+        if (!partite || !card.classList.contains("selected")) {
+          return;
+        }
+        renderDettagli(squadra.nome, partite);
+      }
+    });
 
     cardBody.appendChild(img);
     cardBody.appendChild(nome);
@@ -134,7 +197,9 @@ search.addEventListener("input", (e) => {
     if (controller) {
       controller.abort();
     }
+    errore.hidden = true;
     nascondiSpinner();
+    svuotaDettagli();
     renderSquadra();
     return;
   }
@@ -150,10 +215,66 @@ form.addEventListener("submit", (e) => {
   const query = search.value.trim();
 
   if (!query) {
+    if (controller) {
+      controller.abort();
+    }
+    errore.hidden = true;
+    nascondiSpinner();
+    svuotaDettagli();
+    renderSquadra();
     return;
   }
 
   cercaSquadra(query);
 });
+
+export function svuotaRisultati(teamId) {
+  const articles = risultati.querySelectorAll("article");
+
+  if (articles.length === 0) {
+    risultati.textContent = "";
+    const nonTrovata = document.createElement("p");
+    nonTrovata.className =
+      "text-center fs-6 fst-italic text-white my-3 p-0 mx-0";
+    nonTrovata.textContent = "Cerca la tua squadra";
+    risultati.appendChild(nonTrovata);
+    return;
+  }
+
+  if (teamId) {
+    const cardDaTenere = risultati.querySelector(
+      `article[data-team-id="${teamId}"]`,
+    );
+
+    if (cardDaTenere) {
+      articles.forEach((art) => {
+        if (art !== cardDaTenere) {
+          art.remove();
+        }
+      });
+      return;
+    }
+  }
+
+  risultati.textContent = "";
+  const nonTrovata = document.createElement("p");
+  nonTrovata.className = "text-center fs-6 fst-italic text-white my-3 p-0 mx-0";
+  nonTrovata.textContent = "Cerca la tua squadra";
+  risultati.appendChild(nonTrovata);
+}
+
+export function resetBtnPreferiti(teamId) {
+  const btn = document.querySelector(
+    `#risultati-section button[data-team-id="${teamId}"]`,
+  );
+
+  if (!btn) {
+    return;
+  }
+
+  btn.textContent = "⭐ Aggiungi ai preferiti";
+  btn.className = "btn border-2 mt-3 w-100 fw-bold";
+  btn.disabled = false;
+}
 
 renderSquadra();

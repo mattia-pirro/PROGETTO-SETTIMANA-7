@@ -26,13 +26,15 @@ body {
   box-shadow: 0 0 0 0.2rem #0DA75A;
 }
 
-.btn {
+.site-header .btn,
+#risultati-section .btn {
   background-color: transparent;
   color: #0DA75A;
   border-color: #0DA75A;
 }
 
-.btn:hover {
+.site-header .btn:hover,
+#risultati-section .btn:not(:disabled):hover {
   background-color: #0DA75A !important;
   color: white !important;
 }
@@ -40,7 +42,7 @@ body {
 #hero,
 #hero .carousel-inner,
 #hero .carousel-item {
-  height: 60vh;
+  height: 80vh;
 }
 
 .first-item {
@@ -59,8 +61,14 @@ body {
   max-width: 800px;
 }
 
+#risultati-section .card,
+#preferiti-section .card {
+  cursor: pointer;
+}
+
 .card {
   background-color: #010E03;
+  border: 2px solid #010E03;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition:
     box-shadow 300ms ease-out,
@@ -75,10 +83,28 @@ body {
 .card-img-top {
   width: 150px;
   height: 150px;
+  object-fit: contain;
+  margin: 0 auto;
 }
 
+h2,
 .card-title {
   color: #0DA75A;
+}
+
+.card.selected {
+  border: 2px solid #0DA75A !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  transform: translateY(-4px);
+}
+
+.preferito {
+  color: #DEE2E6 !important;
+  border-color: #DEE2E6 !important;
+}
+
+.titolo-sezione {
+  border-bottom: 2px solid #0DA75A;
 }
 
 .site-footer {
