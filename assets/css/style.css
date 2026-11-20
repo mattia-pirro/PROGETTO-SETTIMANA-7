@@ -1,0 +1,86 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #ffffff;
+  background: #0D170F;
+  min-width: 375px;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.site-header {
+  background-color: #010E03;
+}
+
+#search:focus {
+  box-shadow: 0 0 0 0.2rem #0DA75A;
+}
+
+.btn {
+  background-color: transparent;
+  color: #0DA75A;
+  border-color: #0DA75A;
+}
+
+.btn:hover {
+  background-color: #0DA75A !important;
+  color: white !important;
+}
+
+#hero,
+#hero .carousel-inner,
+#hero .carousel-item {
+  height: 60vh;
+}
+
+.first-item {
+  background-color: #0DA75A;
+}
+
+.second-item {
+  background-color: #010E03;
+}
+
+.third-item {
+  background-color: #0D170F;
+}
+
+.text-carousel {
+  max-width: 800px;
+}
+
+.card {
+  background-color: #010E03;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition:
+    box-shadow 300ms ease-out,
+    transform 300ms ease-out;
+}
+
+.card:hover {
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  transform: translateY(-4px);
+}
+
+.card-img-top {
+  width: 150px;
+  height: 150px;
+}
+
+.card-title {
+  color: #0DA75A;
+}
+
+.site-footer {
+  background-color: #010E03;
+}
